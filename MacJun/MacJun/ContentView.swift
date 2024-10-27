@@ -9,10 +9,10 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @StateObject private var whisperState = WhisperState()
+//    @StateObject private var whisperState = WhisperState()
     
     var body: some View {
-        WhisperModelListView()
+        AudioConverterView()
     }
 }
 

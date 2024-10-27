@@ -14,9 +14,22 @@
 		340DD2DF2CCACB8B0091ADA1 /* MacJun.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MacJun.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		340DD3872CCBE37A0091ADA1 /* Exceptions for "MacJun" folder in "MacJun" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 340DD2DE2CCACB8B0091ADA1 /* MacJun */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		340DD2E12CCACB8B0091ADA1 /* MacJun */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				340DD3872CCBE37A0091ADA1 /* Exceptions for "MacJun" folder in "MacJun" target */,
+			);
 			path = MacJun;
 			sourceTree = "<group>";
 		};
@@ -266,6 +279,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MacJun/Info.plist;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "We need access to save converted audio files.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -294,6 +309,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = MacJun/Info.plist;
+				INFOPLIST_KEY_NSDocumentsFolderUsageDescription = "We need access to save converted audio files.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
