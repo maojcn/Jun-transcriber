@@ -74,7 +74,7 @@ class WhisperState: ObservableObject {
         await transcribeAudio(sampleUrl)
     }
     
-    private func transcribeAudio(_ url: URL) async {
+    func transcribeAudio(_ url: URL) async {
         guard canTranscribe, let whisperContext = whisperContext else {
             return
         }
@@ -87,6 +87,9 @@ class WhisperState: ObservableObject {
             await whisperContext.fullTranscribe(samples: data)
             let text = await whisperContext.getTranscription()
             messageLog += "Done: \(text)\n"
+            
+            // Save the transcription to the Downloads folder
+            await saveTranscription(text, audioFileName: url.lastPathComponent)
         } catch {
             print(error.localizedDescription)
             messageLog += "\(error.localizedDescription)\n"
@@ -97,5 +100,23 @@ class WhisperState: ObservableObject {
     
     private func readAudioSamples(_ url: URL) throws -> [Float] {
         return try decodeWaveFile(url)
+    }
+    
+    private func saveTranscription(_ transcription: String, audioFileName: String) async {
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyyMMdd_HHmmss"
+        let dateString = dateFormatter.string(from: Date())
+        
+        let fileName = "\(audioFileName)_\(dateString).txt"
+        let downloadsDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first!
+        let fileURL = downloadsDirectory.appendingPathComponent(fileName)
+        
+        do {
+            try transcription.write(to: fileURL, atomically: true, encoding: .utf8)
+            messageLog += "Transcription saved to \(fileURL.path)\n"
+        } catch {
+            print("Failed to save transcription: \(error.localizedDescription)")
+            messageLog += "Failed to save transcription: \(error.localizedDescription)\n"
+        }
     }
 }

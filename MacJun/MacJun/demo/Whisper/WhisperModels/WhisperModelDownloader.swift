@@ -114,4 +114,9 @@ class WhisperModelDownloader: ObservableObject {
         let modelPath = modelStoragePath.appendingPathComponent("ggml-\(modelName).bin")
         return FileManager.default.fileExists(atPath: modelPath.path)
     }
+    
+    func getDownloadedModels() -> [String] {
+        return availableModels.filter { isModelDownloaded($0) }
+    }
+    
 }

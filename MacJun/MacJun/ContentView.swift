@@ -28,7 +28,7 @@ struct ContentView: View {
                 }
                 .tag(1)
         }
-        .onChange(of: selectedModelName) { newModelName in
+        .onChange(of: selectedModelName) { old, newModelName in
             whisperState.loadModel(modelName: newModelName)
         }
         .padding()
