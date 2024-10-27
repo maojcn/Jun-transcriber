@@ -23,10 +23,10 @@ class WhisperState: ObservableObject {
         case couldNotLocateSample
     }
     
-    init() {
+    init(modelName: String) {
         do {
             try loadResources()
-            try loadModel()
+            try loadModel(modelName: modelName)
             canTranscribe = true
         } catch {
             print(error.localizedDescription)
@@ -35,26 +35,34 @@ class WhisperState: ObservableObject {
     }
     
     private func loadResources() throws {
-        modelUrl = Bundle.main.url(forResource: "ggml-base.en", withExtension: "bin")
         sampleUrl = Bundle.main.url(forResource: "jfk", withExtension: "wav")
         
-        if modelUrl == nil {
-            throw LoadError.couldNotLocateModel
-        }
         if sampleUrl == nil {
             throw LoadError.couldNotLocateSample
         }
     }
     
-    private func loadModel() throws {
-        guard let modelUrl = modelUrl else {
-            throw LoadError.couldNotLocateModel
+    func loadModel(modelName: String) {
+        guard let modelStoragePath = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("WhisperModels", isDirectory: true) else {
+            messageLog += "Could not locate model storage path\n"
+            return
         }
         
-        messageLog += "Loading model...\n"
-        whisperContext = try WhisperContext.createContext(path: modelUrl.path())
-        messageLog += "Loaded model \(modelUrl.lastPathComponent)\n"
-        isModelLoaded = true
+        let modelPath = modelStoragePath.appendingPathComponent("ggml-\(modelName).bin")
+        if !FileManager.default.fileExists(atPath: modelPath.path) {
+            messageLog += "Model \(modelName) not found\n"
+            return
+        }
+        
+        do {
+            messageLog += "Loading model...\n"
+            whisperContext = try WhisperContext.createContext(path: modelPath.path)
+            messageLog += "Loaded model \(modelName)\n"
+            isModelLoaded = true
+        } catch {
+            print(error.localizedDescription)
+            messageLog += "\(error.localizedDescription)\n"
+        }
     }
     
     func transcribeSample() async {

@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		340DD3092CCACBFD0091ADA1 /* whisper in Frameworks */ = {isa = PBXBuildFile; productRef = 340DD3082CCACBFD0091ADA1 /* whisper */; };
+		34A5D10D2CCE5F5000906F82 /* whisper in Frameworks */ = {isa = PBXBuildFile; productRef = 34A5D10C2CCE5F5000906F82 /* whisper */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -40,7 +40,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				340DD3092CCACBFD0091ADA1 /* whisper in Frameworks */,
+				34A5D10D2CCE5F5000906F82 /* whisper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -83,7 +83,7 @@
 			);
 			name = MacJun;
 			packageProductDependencies = (
-				340DD3082CCACBFD0091ADA1 /* whisper */,
+				34A5D10C2CCE5F5000906F82 /* whisper */,
 			);
 			productName = MacJun;
 			productReference = 340DD2DF2CCACB8B0091ADA1 /* MacJun.app */;
@@ -114,7 +114,7 @@
 			mainGroup = 340DD2D62CCACB8B0091ADA1;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				340DD3072CCACBFD0091ADA1 /* XCRemoteSwiftPackageReference "whisper.cpp" */,
+				34A5D10B2CCE5F5000906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 340DD2E02CCACB8B0091ADA1 /* Products */;
@@ -349,7 +349,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		340DD3072CCACBFD0091ADA1 /* XCRemoteSwiftPackageReference "whisper.cpp" */ = {
+		34A5D10B2CCE5F5000906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ggerganov/whisper.cpp.git";
 			requirement = {
@@ -360,9 +360,9 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		340DD3082CCACBFD0091ADA1 /* whisper */ = {
+		34A5D10C2CCE5F5000906F82 /* whisper */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 340DD3072CCACBFD0091ADA1 /* XCRemoteSwiftPackageReference "whisper.cpp" */;
+			package = 34A5D10B2CCE5F5000906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */;
 			productName = whisper;
 		};
 /* End XCSwiftPackageProductDependency section */

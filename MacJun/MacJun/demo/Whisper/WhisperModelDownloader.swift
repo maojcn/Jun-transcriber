@@ -7,8 +7,7 @@
 
 import Foundation
 
-@Observable
-class WhisperModelDownloader {
+class WhisperModelDownloader: ObservableObject {
     private let baseURL = "https://huggingface.co/ggerganov/whisper.cpp"
     private let tinyDiarizeURL = "https://huggingface.co/akashmjn/tinydiarize-whisper.cpp"
     private let urlPrefix = "resolve/main/ggml"
@@ -97,6 +96,18 @@ class WhisperModelDownloader {
         progressObservers[model.name] = nil
         model.downloadStatus = .notStarted
         model.downloadProgress = 0
+    }
+    
+    func deleteModel(_ model: WhisperModel) {
+        guard let localPath = model.localPath else { return }
+        let modelPath = modelStoragePath.appendingPathComponent("ggml-\(model.name).bin")
+        do {
+            try FileManager.default.removeItem(at: modelPath)
+            model.downloadStatus = .notStarted
+            model.localPath = nil
+        } catch {
+            print("Delete error: \(error.localizedDescription)")
+        }
     }
     
     func isModelDownloaded(_ modelName: String) -> Bool {

@@ -34,6 +34,14 @@ struct WhisperModelRowView: View {
                     downloader.cancelDownload(model)
                 }
             case .completed:
+                Button(action: {
+                    downloader.deleteModel(model)
+                }) {
+                    Image(systemName: "trash.fill")
+                        .foregroundColor(.red)
+                }
+                .padding(.trailing, 8)
+                
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundColor(.green)
             case .failed:
