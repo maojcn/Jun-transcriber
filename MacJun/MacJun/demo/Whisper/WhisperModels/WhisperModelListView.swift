@@ -52,8 +52,17 @@ struct WhisperModelListView: View {
             if models.isEmpty {
                 // Initialize models if none exist
                 for modelName in downloader.availableModels {
-                    let model = WhisperModel(name: modelName)
+                    let isDownloaded = downloader.isModelDownloaded(modelName)
+                    let model = WhisperModel(name: modelName, isDownloaded: isDownloaded)
                     modelContext.insert(model)
+                }
+            } else {
+                // Update existing models with download status and local path
+                for model in models {
+                    let isDownloaded = downloader.isModelDownloaded(model.name)
+                    model.downloadStatus = isDownloaded ? .completed : .notStarted
+                    model.downloadProgress = isDownloaded ? 1.0 : 0.0
+                    model.localPath = isDownloaded ? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("WhisperModels/ggml-\(model.name).bin").path : nil
                 }
             }
         }

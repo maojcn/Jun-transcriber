@@ -17,13 +17,13 @@ final class WhisperModel {
     var downloadProgress: Double
     var localPath: String?
     
-    init(name: String) {
+    init(name: String, isDownloaded: Bool = false) {
         self.id = UUID().uuidString
         self.name = name
         self.size = 0
-        self.downloadStatus = .notStarted
-        self.downloadProgress = 0
-        self.localPath = nil
+        self.downloadStatus = isDownloaded ? .completed : .notStarted
+        self.downloadProgress = isDownloaded ? 1.0 : 0.0
+        self.localPath = isDownloaded ? FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first?.appendingPathComponent("WhisperModels/ggml-\(name).bin").path : nil
     }
 }
 
