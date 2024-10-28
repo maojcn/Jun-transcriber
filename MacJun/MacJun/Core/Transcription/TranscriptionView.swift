@@ -1,18 +1,24 @@
+//
+//  TranscriptionView.swift
+//  MacJun
+//
+//  Created by Jiacheng Mao on 2024/10/28.
+//
+
+
 import SwiftUI
 import UniformTypeIdentifiers
 
 struct TranscriptionView: View {
+    @StateObject private var coordinator = TranscriptionCoordinator()
     @State private var selectedModelPath: String?
     @State private var selectedLanguage: String = "en"
     @State private var audioFileURL: URL?
-    @State private var isTranscribing = false
-    @State private var segments: [(Int, String)] = []
     @State private var showFileChooser = false
-    @State private var errorMessage: String?
-    @State private var transcriptionProgress: Double = 0
+    @State private var showDownloadAlert = false
+    @State private var downloadAlertMessage = ""
     
     private let downloader = WhisperModelDownloader()
-    private var whisperWrapper: WhisperWrapper?
     
     private let languages = [
         "en": "English",
@@ -68,30 +74,35 @@ struct TranscriptionView: View {
             
             // Transcription Controls
             HStack {
-                Button(isTranscribing ? "Stop" : "Start Transcription") {
-                    if isTranscribing {
-                        stopTranscription()
+                Button(coordinator.isTranscribing ? "Stop" : "Start Transcription") {
+                    if coordinator.isTranscribing {
+                        coordinator.stopTranscription()
                     } else {
                         startTranscription()
                     }
                 }
                 .disabled(selectedModelPath == nil || audioFileURL == nil)
                 
-                if isTranscribing {
-                    ProgressView(value: transcriptionProgress)
+                if coordinator.isTranscribing {
+                    ProgressView(value: coordinator.transcriptionProgress)
                         .progressViewStyle(.linear)
                         .frame(width: 100)
                 }
             }
             
+            Button("Download Transcription") {
+                downloadSegments()
+            }
+            .disabled(coordinator.segments.isEmpty)
+            
             // Error Message
-            if let errorMessage = errorMessage {
+            if let errorMessage = coordinator.errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
             }
             
             // Segments List
-            List(segments, id: \.0) { index, text in
+            List(coordinator.segments, id: \.0) { index, text in
                 Text(text)
                     .padding(.vertical, 4)
             }
@@ -106,11 +117,25 @@ struct TranscriptionView: View {
             switch result {
             case .success(let urls):
                 if let url = urls.first {
-                    audioFileURL = url
+                    do {
+                        // Request access to the file
+                        if url.startAccessingSecurityScopedResource() {
+                            audioFileURL = url
+                        } else {
+                            coordinator.errorMessage = "Failed to access file: Permission denied"
+                        }
+                    }
                 }
             case .failure(let error):
-                errorMessage = error.localizedDescription
+                coordinator.errorMessage = error.localizedDescription
             }
+        }
+        .alert(isPresented: $showDownloadAlert) {
+            Alert(
+                title: Text("Download Complete"),
+                message: Text(downloadAlertMessage),
+                dismissButton: .default(Text("OK"))
+            )
         }
     }
     
@@ -125,59 +150,30 @@ struct TranscriptionView: View {
     private func startTranscription() {
         guard let modelPath = selectedModelPath,
               let audioURL = audioFileURL else {
-            errorMessage = "Please select both a model and an audio file"
+            coordinator.errorMessage = "Please select both a model and an audio file"
             return
         }
         
-        isTranscribing = true
-        segments = []
-        errorMessage = nil
+        coordinator.startTranscription(modelPath: modelPath, audioURL: audioURL, language: selectedLanguage)
+    }
+    
+    private func downloadSegments() {
+        let segmentsText = coordinator.segments.map { $0.1 }.joined(separator: "\n")
+        let fileName = "Transcription_\(Date().timeIntervalSince1970).txt"
         
-        Task {
+        if let downloadDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
+            let fileURL = downloadDirectory.appendingPathComponent(fileName)
+            
             do {
-                // Convert audio file
-                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
-                
-                // Load audio samples
-                let samples = try WhisperWrapper.loadAudio(from: convertedURL)
-                
-                // Initialize Whisper
-                let whisper = try WhisperWrapper(modelPath: modelPath)
-                whisper.delegate = self
-                
-                // Start transcription
-                whisper.transcribe(samples, language: selectedLanguage)
+                try segmentsText.write(to: fileURL, atomically: true, encoding: .utf8)
+                downloadAlertMessage = "Transcription saved to: \(fileURL.path)"
+                showDownloadAlert = true
             } catch {
-                DispatchQueue.main.async {
-                    errorMessage = error.localizedDescription
-                    isTranscribing = false
-                }
+                coordinator.errorMessage = "Failed to save segments: \(error.localizedDescription)"
             }
+        } else {
+            coordinator.errorMessage = "Failed to locate download directory"
         }
-    }
-    
-    private func stopTranscription() {
-        // Implement stop functionality
-        whisperWrapper?.stopTranscription()
-        isTranscribing = false
-    }
-}
-
-// Extend TranscriptionView to conform to WhisperDelegate
-extension TranscriptionView: WhisperDelegate {
-    func whisper(_ whisper: WhisperWrapper, didUpdateSegment text: String, at index: Int) {
-        segments.append((index, text))
-    }
-    
-    func whisper(_ whisper: WhisperWrapper, didCompleteWithSuccess success: Bool) {
-        isTranscribing = false
-        if !success {
-            errorMessage = "Transcription failed"
-        }
-    }
-    
-    func whisper(_ whisper: WhisperWrapper, didUpdateProgress progress: Double) {
-        transcriptionProgress = progress
     }
 }
 
