@@ -6,35 +6,51 @@
 //
 
 import SwiftUI
-import SwiftData
 
 struct ContentView: View {
-    @State private var selectedTab = 0
-    @StateObject private var whisperState = WhisperState(modelName: "tiny.en")
-    @State private var selectedModelName: String = "tiny.en"
-    @StateObject private var downloader = WhisperModelDownloader()
+    enum Tab {
+        case models
+        case transcription
+    }
+    
+    @State private var selectedTab: Tab = .transcription
+    @State private var sidebarWidth: CGFloat = 200
     
     var body: some View {
-        TabView(selection: $selectedTab) {
-            WhisperModelListView()
-                .tabItem {
+        NavigationSplitView {
+            // Sidebar
+            List(selection: $selectedTab) {
+                NavigationLink(value: Tab.transcription) {
+                    Label("Transcription", systemImage: "waveform")
+                }
+                
+                NavigationLink(value: Tab.models) {
                     Label("Models", systemImage: "square.stack.3d.up")
                 }
-                .tag(0)
-            
-            TranscribeDeomoView(whisperState: whisperState, selectedModelName: $selectedModelName, downloader: downloader)
-                .tabItem {
-                    Label("Transcribe", systemImage: "waveform")
+            }
+            .navigationTitle("MacJun")
+            .listStyle(.sidebar)
+        } detail: {
+            // Main Content Area
+            Group {
+                switch selectedTab {
+                case .transcription:
+                    TranscriptionView()
+                        .navigationTitle("Transcription")
+                case .models:
+                    WhisperModelListView()
+                        .navigationTitle("Whisper Models")
                 }
-                .tag(1)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding()
         }
-        .onChange(of: selectedModelName) { old, newModelName in
-            whisperState.loadModel(modelName: newModelName)
-        }
-        .padding()
+        .navigationSplitViewStyle(.balanced)
+        .frame(minWidth: 800, minHeight: 600)
     }
 }
 
 #Preview {
     ContentView()
+        .modelContainer(for: WhisperModel.self, inMemory: true)
 }

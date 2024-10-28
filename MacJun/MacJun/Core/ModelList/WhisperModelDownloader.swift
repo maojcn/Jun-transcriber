@@ -99,7 +99,7 @@ class WhisperModelDownloader: ObservableObject {
     }
     
     func deleteModel(_ model: WhisperModel) {
-        guard let localPath = model.localPath else { return }
+        guard model.localPath != nil else { return }
         let modelPath = modelStoragePath.appendingPathComponent("ggml-\(model.name).bin")
         do {
             try FileManager.default.removeItem(at: modelPath)
