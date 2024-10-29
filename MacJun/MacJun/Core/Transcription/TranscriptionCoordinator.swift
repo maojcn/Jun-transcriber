@@ -24,10 +24,10 @@ class TranscriptionCoordinator: ObservableObject, WhisperDelegate {
         Task {
             do {
                 // Convert audio file
-                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
+//                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
                 
                 // Load audio samples
-                let samples = try WhisperWrapper.loadAudio(from: convertedURL)
+                let samples = try WhisperWrapper.loadAudio(from: audioURL)
                 
                 // Initialize Whisper
                 whisperWrapper = try WhisperWrapper(modelPath: modelPath)

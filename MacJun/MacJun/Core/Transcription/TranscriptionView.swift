@@ -5,7 +5,6 @@
 //  Created by Jiacheng Mao on 2024/10/28.
 //
 
-
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -17,6 +16,7 @@ struct TranscriptionView: View {
     @State private var showFileChooser = false
     @State private var showDownloadAlert = false
     @State private var downloadAlertMessage = ""
+    @State private var isConverting = false // New state variable for conversion status
     
     private let downloader = WhisperModelDownloader()
     
@@ -83,10 +83,15 @@ struct TranscriptionView: View {
                 }
                 .disabled(selectedModelPath == nil || audioFileURL == nil)
                 
-                if coordinator.isTranscribing {
-                    ProgressView(value: coordinator.transcriptionProgress)
-                        .progressViewStyle(.linear)
-                        .frame(width: 100)
+                if isConverting {
+                    Text("Converting...")
+                } else if coordinator.isTranscribing {
+                    HStack{
+                        ProgressView(value: coordinator.transcriptionProgress)
+                            .progressViewStyle(.linear)
+                            .frame(width: 100)
+                        Text("\(Int(coordinator.transcriptionProgress * 100))%")
+                    }
                 }
             }
             
@@ -133,7 +138,7 @@ struct TranscriptionView: View {
         .alert(isPresented: $showDownloadAlert) {
             Alert(
                 title: Text("Download Complete"),
-                message: Text(downloadAlertMessage),
+                message: Text("Transcription saved to the Downloads folder. You can find it in Finder under the Downloads section."),
                 dismissButton: .default(Text("OK"))
             )
         }
@@ -154,7 +159,23 @@ struct TranscriptionView: View {
             return
         }
         
-        coordinator.startTranscription(modelPath: modelPath, audioURL: audioURL, language: selectedLanguage)
+        isConverting = true // Set converting state to true
+        
+        Task {
+            do {
+                // Convert audio file
+                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
+                isConverting = false // Set converting state to false after conversion
+                
+                // Start transcription
+                coordinator.startTranscription(modelPath: modelPath, audioURL: convertedURL, language: selectedLanguage)
+            } catch {
+                isConverting = false // Set converting state to false if conversion fails
+                DispatchQueue.main.async {
+                    self.coordinator.errorMessage = error.localizedDescription
+                }
+            }
+        }
     }
     
     private func downloadSegments() {
@@ -166,7 +187,6 @@ struct TranscriptionView: View {
             
             do {
                 try segmentsText.write(to: fileURL, atomically: true, encoding: .utf8)
-                downloadAlertMessage = "Transcription saved to: \(fileURL.path)"
                 showDownloadAlert = true
             } catch {
                 coordinator.errorMessage = "Failed to save segments: \(error.localizedDescription)"

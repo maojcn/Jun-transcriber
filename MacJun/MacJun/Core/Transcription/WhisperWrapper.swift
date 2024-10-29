@@ -32,7 +32,7 @@ final class WhisperWrapper {
     weak var delegate: WhisperDelegate?
     
     /// property to store progress and progress callback
-    private var progress: Double = 0.0
+    private var progress: Int32 = 0
     
     /// Initialize with a model file path
     /// - Parameter modelPath: Path to the Whisper model file
@@ -111,6 +111,16 @@ final class WhisperWrapper {
             params.abort_callback = { (user_data) -> Bool in
                 let instance = Unmanaged<WhisperWrapper>.fromOpaque(user_data!).takeUnretainedValue()
                 return instance.shouldTerminate
+            }
+            
+            // Set up progress callback
+            params.progress_callback = { (ctx, state, progress, user_data) in
+                let instance = Unmanaged<WhisperWrapper>.fromOpaque(user_data!).takeUnretainedValue()
+                
+                // Dispatch to main thread for UI updates
+                DispatchQueue.main.async {
+                    instance.delegate?.whisper(instance, didUpdateProgress: Double(progress) / 100.0)
+                }
             }
             
             // Pass self as user data for callbacks
