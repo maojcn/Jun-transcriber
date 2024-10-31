@@ -19,8 +19,10 @@ Jun is a macOS application designed to provide advanced audio transcription capa
 
 ## Screenshots
 
-![Screenshot 1](./Resource/Screenshot%202024-10-29%20at%2021.50.30.png)
-![Screenshot 2](./Resource/Screenshot%202024-10-29%20at%2021.50.38.png)
+<p align="center">
+    <img src="./Resource/Screenshot_transcribe.png" alt="Screenshot 1" width="45%">
+    <img src="./Resource/Screenshot_modelList.png" alt="Screenshot 2" width="45%">
+</p>
 
 ## Dependencies
 
