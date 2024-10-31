@@ -49,3 +49,8 @@ For any inquiries, please [contact me](mailto:jiacheng.mao@outlook.com).
 
 If you find this project useful, please consider giving it a star ⭐ on GitHub.
 
+You can also support me by buying me a coffee:
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-donate-yellow)](https://www.buymeacoffee.com/jiachengmao)
+
+Thank you for your support!
