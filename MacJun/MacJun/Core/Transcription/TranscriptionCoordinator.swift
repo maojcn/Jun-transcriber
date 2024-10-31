@@ -8,8 +8,13 @@
 
 import Foundation
 
+struct TransSegment: Identifiable, Equatable {
+    let id: Int
+    let text: String
+}
+
 class TranscriptionCoordinator: ObservableObject, WhisperDelegate {
-    @Published var segments: [(Int, String)] = []
+    @Published var segments: [TransSegment] = []
     @Published var isTranscribing = false
     @Published var transcriptionProgress: Double = 0
     @Published var errorMessage: String?
@@ -51,7 +56,14 @@ class TranscriptionCoordinator: ObservableObject, WhisperDelegate {
     // MARK: - WhisperDelegate
     
     func whisper(_ whisper: WhisperWrapper, didUpdateSegment text: String, at index: Int) {
-        segments.append((index, text))
+        DispatchQueue.main.async {
+            if let lastSegment = self.segments.last {
+                if lastSegment.text == text {
+                    return // Skip duplicate text
+                }
+            }
+            self.segments.append(TransSegment(id: index, text: text))
+        }
     }
     
     func whisper(_ whisper: WhisperWrapper, didCompleteWithSuccess success: Bool) {

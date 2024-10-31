@@ -12,46 +12,72 @@ struct WhisperModelRowView: View {
     let downloader: WhisperModelDownloader
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading) {
+        HStack(spacing: 16) {
+            Image(systemName: "waveform.circle.fill")
+                .resizable()
+                .frame(width: 32, height: 32)
+                .foregroundStyle(.blue.gradient)
+            
+            VStack(alignment: .leading, spacing: 4) {
                 Text(model.name)
-                    .font(.headline)
+                    .font(.system(.body, design: .rounded))
+                
                 if model.downloadStatus == .downloading {
-                    ProgressView(value: model.downloadProgress)
-                        .progressViewStyle(.linear)
+                    HStack {
+                        ProgressView(value: model.downloadProgress)
+                            .progressViewStyle(.linear)
+                            .frame(maxWidth: 120)
+                        Text("\(Int(model.downloadProgress * 100))%")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
             
             Spacer()
             
-            switch model.downloadStatus {
-            case .notStarted:
-                Button("Download") {
-                    downloader.downloadModel(model)
+            HStack(spacing: 12) {
+                switch model.downloadStatus {
+                case .notStarted:
+                    Button(action: { downloader.downloadModel(model) }) {
+                        Label("Download", systemImage: "arrow.down.circle.fill")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.small)
+                    
+                case .downloading:
+                    Button(action: { downloader.cancelDownload(model) }) {
+                        Label("Cancel", systemImage: "xmark.circle.fill")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.orange)
+                    
+                case .completed:
+                    HStack {
+                        Button(action: { downloader.deleteModel(model) }) {
+                            Image(systemName: "trash.circle.fill")
+                        }
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.red)
+                        
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(.green)
+                    }
+                    
+                case .failed:
+                    Button(action: { downloader.downloadModel(model) }) {
+                        Label("Retry", systemImage: "arrow.clockwise.circle.fill")
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.red)
                 }
-            case .downloading:
-                Button("Cancel") {
-                    downloader.cancelDownload(model)
-                }
-            case .completed:
-                Button(action: {
-                    downloader.deleteModel(model)
-                }) {
-                    Image(systemName: "trash.fill")
-                        .foregroundColor(.red)
-                }
-                .padding(.trailing, 8)
-                
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundColor(.green)
-            case .failed:
-                Button("Retry") {
-                    downloader.downloadModel(model)
-                }
-                .foregroundColor(.red)
             }
         }
-        .padding(.vertical, 4)
+        .padding(12)
+        .background(RoundedRectangle(cornerRadius: 10)
+                    .fill(Color(.controlBackgroundColor))
+                    .shadow(radius: 1))
+        .help("Model: \(model.name)")
     }
 }
 

@@ -20,192 +20,143 @@ struct TranscriptionView: View {
     
     private let downloader = WhisperModelDownloader()
     
-    private let languages = [
-        "auto": "Auto-Detect",
-        "en": "English",
-        "zh": "Chinese",
-        "ja": "Japanese",
-        "ko": "Korean",
-        "fr": "French",
-        "de": "German",
-        "es": "Spanish",
-        "ru": "Russian",
-        "pt": "Portuguese",
-        "tr": "Turkish",
-        "pl": "Polish",
-        "ca": "Catalan",
-        "nl": "Dutch",
-        "ar": "Arabic",
-        "sv": "Swedish",
-        "it": "Italian",
-        "id": "Indonesian",
-        "hi": "Hindi",
-        "fi": "Finnish",
-        "vi": "Vietnamese",
-        "he": "Hebrew",
-        "uk": "Ukrainian",
-        "el": "Greek",
-        "ms": "Malay",
-        "cs": "Czech",
-        "ro": "Romanian",
-        "da": "Danish",
-        "hu": "Hungarian",
-        "ta": "Tamil",
-        "no": "Norwegian",
-        "th": "Thai",
-        "ur": "Urdu",
-        "hr": "Croatian",
-        "bg": "Bulgarian",
-        "lt": "Lithuanian",
-        "la": "Latin",
-        "mi": "Maori",
-        "ml": "Malayalam",
-        "cy": "Welsh",
-        "sk": "Slovak",
-        "te": "Telugu",
-        "fa": "Persian",
-        "lv": "Latvian",
-        "bn": "Bengali",
-        "sr": "Serbian",
-        "az": "Azerbaijani",
-        "sl": "Slovenian",
-        "kn": "Kannada",
-        "et": "Estonian",
-        "mk": "Macedonian",
-        "br": "Breton",
-        "eu": "Basque",
-        "is": "Icelandic",
-        "hy": "Armenian",
-        "ne": "Nepali",
-        "mn": "Mongolian",
-        "bs": "Bosnian",
-        "kk": "Kazakh",
-        "sq": "Albanian",
-        "sw": "Swahili",
-        "gl": "Galician",
-        "mr": "Marathi",
-        "pa": "Punjabi",
-        "si": "Sinhala",
-        "km": "Khmer",
-        "sn": "Shona",
-        "yo": "Yoruba",
-        "so": "Somali",
-        "af": "Afrikaans",
-        "oc": "Occitan",
-        "ka": "Georgian",
-        "be": "Belarusian",
-        "tg": "Tajik",
-        "sd": "Sindhi",
-        "gu": "Gujarati",
-        "am": "Amharic",
-        "yi": "Yiddish",
-        "lo": "Lao",
-        "uz": "Uzbek",
-        "fo": "Faroese",
-        "ht": "Haitian Creole",
-        "ps": "Pashto",
-        "tk": "Turkmen",
-        "nn": "Nynorsk",
-        "mt": "Maltese",
-        "sa": "Sanskrit",
-        "lb": "Luxembourgish",
-        "my": "Myanmar",
-        "bo": "Tibetan",
-        "tl": "Tagalog",
-        "mg": "Malagasy",
-        "as": "Assamese",
-        "tt": "Tatar",
-        "haw": "Hawaiian",
-        "ln": "Lingala",
-        "ha": "Hausa",
-        "ba": "Bashkir",
-        "jw": "Javanese",
-        "su": "Sundanese",
-        "yue": "Cantonese"
-    ]
-    
     var body: some View {
-        VStack(spacing: 20) {
-            // Model Selection
-            HStack {
-                Text("Model:")
-                Picker("Model", selection: $selectedModelPath) {
-                    Text("Select Model").tag(nil as String?)
-                    ForEach(downloader.getDownloadedModels(), id: \.self) { model in
-                        if let path = getModelPath(for: model) {
-                            Text(model).tag(path as String?)
+        VStack(spacing: 24) {
+            // Model & Language Selection Group
+            GroupBox {
+                VStack(spacing: 16) {
+                    HStack {
+                        Text("Model:")
+                            .frame(width: 80, alignment: .trailing)
+                        Picker("Model", selection: $selectedModelPath) {
+                            Text("Select Model").tag(nil as String?)
+                            ForEach(downloader.getDownloadedModels(), id: \.self) { model in
+                                if let path = getModelPath(for: model) {
+                                    Text(model).tag(path as String?)
+                                }
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity)
+                    }
+                    
+                    HStack {
+                        Text("Language:")
+                            .frame(width: 80, alignment: .trailing)
+                        Picker("Language", selection: $selectedLanguage) {
+                            ForEach(languages.sorted(by: { $0.value < $1.value }), id: \.key) { key, value in
+                                Text(value).tag(key)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(maxWidth: .infinity)
+                    }
+                }
+                .padding(8)
+            } label: {
+                Label("Configuration", systemImage: "gearshape")
+            }
+            
+            // Audio File Selection Group
+            GroupBox {
+                HStack(spacing: 12) {
+                    Image(systemName: "waveform")
+                        .foregroundStyle(.blue)
+                    
+                    VStack(alignment: .leading) {
+                        if let url = audioFileURL {
+                            Text(url.lastPathComponent)
+                                .lineLimit(1)
+                                .truncationMode(.middle)
+                        } else {
+                            Text("No file selected")
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Choose File") {
+                        showFileChooser = true
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                .padding(8)
+            } label: {
+                Label("Audio File", systemImage: "music.note")
+            }
+            
+            // Transcription Controls
+            GroupBox {
+                VStack(spacing: 16) {
+                    HStack {
+                        if isConverting || coordinator.isTranscribing {
+                            HStack(spacing: 8) {
+                                ProgressView()
+                                    .scaleEffect(0.8)
+                                Text(isConverting ? "Converting..." : "\(Int(coordinator.transcriptionProgress * 100))%")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        Button(coordinator.isTranscribing ? "Stop" : "Start Transcription") {
+                            if coordinator.isTranscribing {
+                                coordinator.stopTranscription()
+                            } else {
+                                startTranscription()
+                            }
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(selectedModelPath == nil || audioFileURL == nil)
+                    }
+                    
+                    if let errorMessage = coordinator.errorMessage {
+                        Text(errorMessage)
+                            .foregroundColor(.red)
+                            .font(.caption)
+                    }
+                }
+                .padding(8)
+            } label: {
+                Label("Controls", systemImage: "play.circle")
+            }
+            
+            // Results Section
+            GroupBox {
+                HStack {
+                    Text("Transcription Results")
+                        .font(.headline)
+                    Spacer()
+                    Button("Download") {
+                        downloadSegments()
+                    }
+                    .disabled(coordinator.segments.isEmpty)
+                }
+                
+                ScrollViewReader { proxy in
+                    List(coordinator.segments) { segment in
+                        Text(segment.text)
+                            .textSelection(.enabled)
+                            .padding(.vertical, 4)
+                            .id(segment.id)
+                    }
+                    .background(Color(.textBackgroundColor))
+                    .cornerRadius(6)
+                    .onChange(of: coordinator.segments) { old, segments in
+                        if let lastSegment = segments.last {
+                            withAnimation {
+                                proxy.scrollTo(lastSegment.id, anchor: .bottom)
+                            }
                         }
                     }
                 }
             }
-            
-            // Language Selection
-            HStack {
-                Text("Language:")
-                Picker("Language", selection: $selectedLanguage) {
-                    ForEach(languages.sorted(by: { $0.value < $1.value }), id: \.key) { key, value in
-                        Text(value).tag(key)
-                    }
-                }
-            }
-            
-            // Audio File Selection
-            HStack {
-                Text("Audio File:")
-                if let url = audioFileURL {
-                    Text(url.lastPathComponent)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                } else {
-                    Text("No file selected")
-                }
-                Button("Choose File") {
-                    showFileChooser = true
-                }
-            }
-            
-            // Transcription Controls
-            HStack {
-                Button(coordinator.isTranscribing ? "Stop" : "Start Transcription") {
-                    if coordinator.isTranscribing {
-                        coordinator.stopTranscription()
-                    } else {
-                        startTranscription()
-                    }
-                }
-                .disabled(selectedModelPath == nil || audioFileURL == nil)
-                
-                if isConverting {
-                    Text("Converting...")
-                } else if coordinator.isTranscribing {
-                    HStack{
-                        ProgressView(value: coordinator.transcriptionProgress)
-                            .progressViewStyle(.linear)
-                            .frame(width: 100)
-                        Text("\(Int(coordinator.transcriptionProgress * 100))%")
-                    }
-                }
-            }
-            
-            Button("Download Transcription") {
-                downloadSegments()
-            }
-            .disabled(coordinator.segments.isEmpty)
-            
-            // Error Message
-            if let errorMessage = coordinator.errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-            }
-            
-            // Segments List
-            List(coordinator.segments, id: \.0) { index, text in
-                Text(text)
-                    .padding(.vertical, 4)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .padding(8)
         }
         .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .fileImporter(
             isPresented: $showFileChooser,
             allowedContentTypes: [.audio],
@@ -230,7 +181,7 @@ struct TranscriptionView: View {
         .alert(isPresented: $showDownloadAlert) {
             Alert(
                 title: Text("Download Complete"),
-                message: Text("Transcription saved to the Downloads folder. You can find it in Finder under the Downloads section."),
+                message: Text("Transcription saved to the Downloads folder. \n You can find it in Finder under the Downloads section."),
                 dismissButton: .default(Text("OK"))
             )
         }
@@ -271,7 +222,7 @@ struct TranscriptionView: View {
     }
     
     private func downloadSegments() {
-        let segmentsText = coordinator.segments.map { $0.1 }.joined(separator: "\n")
+        let segmentsText = coordinator.segments.map { $0.text }.joined(separator: "\n")
         let fileName = "Transcription_\(Date().timeIntervalSince1970).txt"
         
         if let downloadDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
