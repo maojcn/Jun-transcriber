@@ -8,6 +8,68 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
+private let supportedAudioTypes: [UTType] = [.mp3, .wav, .mpeg4Audio, .aiff]
+
+struct AudioDropDelegate: DropDelegate {
+    let audioFileBinding: Binding<URL?>
+    let isTargeted: Binding<Bool>
+    
+    func validateDrop(info: DropInfo) -> Bool {
+        return info.hasItemsConforming(to: supportedAudioTypes)
+    }
+    
+    func dropEntered(info: DropInfo) {
+        isTargeted.wrappedValue = true
+    }
+    
+    func dropExited(info: DropInfo) {
+        isTargeted.wrappedValue = false
+    }
+    
+    func performDrop(info: DropInfo) -> Bool {
+        isTargeted.wrappedValue = false
+        
+        guard let itemProvider = info.itemProviders(for: supportedAudioTypes).first else {
+            return false
+        }
+        
+        itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.audiovisualContent.identifier) { url, error in
+            guard let url = url else { return }
+            
+            // Create a permanent copy in the app's documents directory
+            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
+            let destinationURL = documentsURL.appendingPathComponent(url.lastPathComponent)
+            
+            do {
+                if FileManager.default.fileExists(atPath: destinationURL.path) {
+                    try FileManager.default.removeItem(at: destinationURL)
+                }
+                try FileManager.default.copyItem(at: url, to: destinationURL)
+                
+                DispatchQueue.main.async {
+                    self.audioFileBinding.wrappedValue = destinationURL
+                }
+            } catch {
+                print("Error handling dropped file: \(error)")
+            }
+        }
+        return true
+    }
+}
+
+struct DragDropStyle: ViewModifier {
+    let isTargeted: Bool
+    
+    func body(content: Content) -> some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(isTargeted ? Color.accentColor : Color.gray, style: StrokeStyle(lineWidth: 2, dash: [6]))
+            )
+            .background(isTargeted ? Color.accentColor.opacity(0.1) : Color.clear)
+    }
+}
+
 struct TranscriptionView: View {
     @StateObject private var coordinator = TranscriptionCoordinator()
     @State private var selectedModelPath: String?
@@ -17,6 +79,7 @@ struct TranscriptionView: View {
     @State private var showDownloadAlert = false
     @State private var downloadAlertMessage = ""
     @State private var isConverting = false // New state variable for conversion status
+    @State private var isDragTargeted = false
     
     private let downloader = WhisperModelDownloader()
     
@@ -59,31 +122,48 @@ struct TranscriptionView: View {
             
             // Audio File Selection Group
             GroupBox {
-                HStack(spacing: 12) {
-                    Image(systemName: "waveform")
-                        .foregroundStyle(.blue)
+                VStack(spacing: 16) {
+                    let dropDelegate = AudioDropDelegate(audioFileBinding: $audioFileURL, isTargeted: $isDragTargeted)
                     
-                    VStack(alignment: .leading) {
-                        if let url = audioFileURL {
-                            Text(url.lastPathComponent)
-                                .lineLimit(1)
-                                .truncationMode(.middle)
-                        } else {
-                            Text("No file selected")
-                                .foregroundColor(.secondary)
+                    ZStack {
+                        VStack {
+                            Image(systemName: "arrow.down.doc")
+                                .font(.largeTitle)
+                                .padding(.bottom, 4)
+                            Text("Drop audio file here")
+                                .font(.headline)
+                            Text("or")
+                            Button("Choose File") {
+                                showFileChooser = true
+                            }
+                            .padding(.top, 1)
                         }
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
                     }
+                    .modifier(DragDropStyle(isTargeted: isDragTargeted))
+                    .onDrop(
+                        of: supportedAudioTypes,
+                        delegate: AudioDropDelegate(
+                            audioFileBinding: $audioFileURL,
+                            isTargeted: $isDragTargeted
+                        )
+                    )
                     
-                    Spacer()
-                    
-                    Button("Choose File") {
-                        showFileChooser = true
+                    if let url = audioFileURL {
+                        HStack {
+                            Image(systemName: "waveform")
+                                .foregroundStyle(.blue)
+                                
+                            Text(url.lastPathComponent)
+                            Spacer()
+                            Button(action: { audioFileURL = nil }) {
+                                Image(systemName: "xmark.circle.fill")
+                            }
+                        }
+                        .padding(.top, 8)
                     }
-                    .buttonStyle(.borderedProminent)
                 }
-                .padding(8)
-            } label: {
-                Label("Audio File", systemImage: "music.note")
             }
             
             // Transcription Controls
@@ -94,9 +174,18 @@ struct TranscriptionView: View {
                             HStack(spacing: 8) {
                                 ProgressView()
                                     .scaleEffect(0.8)
+                                    .help("Processing in progress...")
+                                    
                                 Text(isConverting ? "Converting..." : "\(Int(coordinator.transcriptionProgress * 100))%")
                                     .foregroundColor(.secondary)
+                                    .help("Current progress")
                             }
+                        }else {
+                            Text("Tips: Select a model and audio file, then click 'Start Transcription' to begin")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.bottom, 4)
                         }
                         
                         Spacer()
@@ -110,6 +199,9 @@ struct TranscriptionView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .disabled(selectedModelPath == nil || audioFileURL == nil)
+                        .help(selectedModelPath == nil ? "Please select a model first" :
+                            audioFileURL == nil ? "Please select an audio file first" :
+                            coordinator.isTranscribing ? "Click to stop transcription" : "Click to start transcription")
                     }
                     
                     if let errorMessage = coordinator.errorMessage {
@@ -121,6 +213,7 @@ struct TranscriptionView: View {
                 .padding(8)
             } label: {
                 Label("Controls", systemImage: "play.circle")
+                    .help("Transcription control options")
             }
             
             // Results Section
