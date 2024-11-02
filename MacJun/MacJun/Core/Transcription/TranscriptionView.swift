@@ -218,35 +218,37 @@ struct TranscriptionView: View {
             
             // Results Section
             GroupBox {
-                HStack {
-                    Text("Transcription Results")
-                        .font(.headline)
-                    Spacer()
-                    Button("Download") {
-                        downloadSegments()
+                VStack(spacing: 16){
+                    HStack {
+                        Text("Transcription Results")
+                            .font(.headline)
+                        Spacer()
+                        Button("Download") {
+                            downloadSegments()
+                        }
+                        .disabled(coordinator.segments.isEmpty)
                     }
-                    .disabled(coordinator.segments.isEmpty)
-                }
-                
-                ScrollViewReader { proxy in
-                    List(coordinator.segments) { segment in
-                        Text(segment.text)
-                            .textSelection(.enabled)
-                            .padding(.vertical, 4)
-                            .id(segment.id)
-                    }
-                    .background(Color(.textBackgroundColor))
-                    .cornerRadius(6)
-                    .onChange(of: coordinator.segments) { old, segments in
-                        if let lastSegment = segments.last {
-                            withAnimation {
-                                proxy.scrollTo(lastSegment.id, anchor: .bottom)
+                    
+                    ScrollViewReader { proxy in
+                        List(coordinator.segments) { segment in
+                            Text(segment.text)
+                                .textSelection(.enabled)
+                                .padding(.vertical, 4)
+                                .id(segment.id)
+                        }
+                        .background(Color(.textBackgroundColor))
+                        .cornerRadius(6)
+                        .onChange(of: coordinator.segments) { old, segments in
+                            if let lastSegment = segments.last {
+                                withAnimation {
+                                    proxy.scrollTo(lastSegment.id, anchor: .bottom)
+                                }
                             }
                         }
                     }
                 }
+                .padding(8)
             }
-            .padding(8)
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
