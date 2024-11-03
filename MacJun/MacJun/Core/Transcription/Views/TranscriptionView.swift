@@ -1,5 +1,13 @@
 //
 //  TranscriptionView.swift
+//  Jun
+//
+//  Created by Jiacheng Mao on 2024/11/3.
+//
+
+
+//
+//  TranscriptionView.swift
 //  MacJun
 //
 //  Created by Jiacheng Mao on 2024/10/28.
@@ -8,72 +16,23 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-private let supportedAudioTypes: [UTType] = [.mp3, .wav, .mpeg4Audio, .aiff]
+private let supportedAudioTypes: [UTType] = [
+    .mp3,          // .mp3
+    .wav,          // .wav
+    .mpeg4Audio,   // .m4a, .aac
+    .aiff,         // .aif, .aiff
+    .midi,         // .mid
+    .audiovisualContent, // .caf
+]
 
-struct AudioDropDelegate: DropDelegate {
-    let audioFileBinding: Binding<URL?>
-    let isTargeted: Binding<Bool>
-    
-    func validateDrop(info: DropInfo) -> Bool {
-        return info.hasItemsConforming(to: supportedAudioTypes)
-    }
-    
-    func dropEntered(info: DropInfo) {
-        isTargeted.wrappedValue = true
-    }
-    
-    func dropExited(info: DropInfo) {
-        isTargeted.wrappedValue = false
-    }
-    
-    func performDrop(info: DropInfo) -> Bool {
-        isTargeted.wrappedValue = false
-        
-        guard let itemProvider = info.itemProviders(for: supportedAudioTypes).first else {
-            return false
-        }
-        
-        itemProvider.loadFileRepresentation(forTypeIdentifier: UTType.audiovisualContent.identifier) { url, error in
-            guard let url = url else { return }
-            
-            // Create a permanent copy in the app's documents directory
-            let documentsURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0]
-            let destinationURL = documentsURL.appendingPathComponent(url.lastPathComponent)
-            
-            do {
-                if FileManager.default.fileExists(atPath: destinationURL.path) {
-                    try FileManager.default.removeItem(at: destinationURL)
-                }
-                try FileManager.default.copyItem(at: url, to: destinationURL)
-                
-                DispatchQueue.main.async {
-                    self.audioFileBinding.wrappedValue = destinationURL
-                }
-            } catch {
-                print("Error handling dropped file: \(error)")
-            }
-        }
-        return true
-    }
-}
-
-struct DragDropStyle: ViewModifier {
-    let isTargeted: Bool
-    
-    func body(content: Content) -> some View {
-        content
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .stroke(isTargeted ? Color.accentColor : Color.gray, style: StrokeStyle(lineWidth: 2, dash: [6]))
-            )
-            .background(isTargeted ? Color.accentColor.opacity(0.1) : Color.clear)
-    }
+private enum UserDefaultsKeys {
+    static let selectedLanguage = "selectedTranscriptionLanguage"
 }
 
 struct TranscriptionView: View {
     @StateObject private var coordinator = TranscriptionCoordinator()
     @State private var selectedModelPath: String?
-    @State private var selectedLanguage: String = "en"
+    @State private var selectedLanguage: String = UserDefaults.standard.string(forKey: UserDefaultsKeys.selectedLanguage) ?? "en"
     @State private var audioFileURL: URL?
     @State private var showFileChooser = false
     @State private var showDownloadAlert = false
@@ -87,7 +46,7 @@ struct TranscriptionView: View {
         VStack(spacing: 24) {
             // Model & Language Selection Group
             GroupBox {
-                VStack(spacing: 16) {
+                HStack(spacing: 16) {
                     HStack {
                         Text("Model:")
                             .frame(width: 80, alignment: .trailing)
@@ -113,6 +72,9 @@ struct TranscriptionView: View {
                         }
                         .labelsHidden()
                         .frame(maxWidth: .infinity)
+                        .onChange(of: selectedLanguage) {oldValue, newValue in
+                            UserDefaults.standard.set(newValue, forKey: UserDefaultsKeys.selectedLanguage)
+                        }
                     }
                 }
                 .padding(8)
@@ -124,31 +86,6 @@ struct TranscriptionView: View {
             GroupBox {
                 VStack(spacing: 16) {
                     let dropDelegate = AudioDropDelegate(audioFileBinding: $audioFileURL, isTargeted: $isDragTargeted)
-                    
-                    ZStack {
-                        VStack {
-                            Image(systemName: "arrow.down.doc")
-                                .font(.largeTitle)
-                                .padding(.bottom, 4)
-                            Text("Drop audio file here")
-                                .font(.headline)
-                            Text("or")
-                            Button("Choose File") {
-                                showFileChooser = true
-                            }
-                            .padding(.top, 1)
-                        }
-                        .padding(10)
-                        .frame(maxWidth: .infinity)
-                    }
-                    .modifier(DragDropStyle(isTargeted: isDragTargeted))
-                    .onDrop(
-                        of: supportedAudioTypes,
-                        delegate: AudioDropDelegate(
-                            audioFileBinding: $audioFileURL,
-                            isTargeted: $isDragTargeted
-                        )
-                    )
                     
                     if let url = audioFileURL {
                         HStack {
@@ -162,6 +99,31 @@ struct TranscriptionView: View {
                             }
                         }
                         .padding(.top, 8)
+                    }else{
+                        ZStack {
+                            VStack {
+                                Image(systemName: "arrow.down.doc")
+                                    .font(.largeTitle)
+                                    .padding(.bottom, 4)
+                                Text("Drop audio file here")
+                                    .font(.headline)
+                                Text("or")
+                                Button("Choose File") {
+                                    showFileChooser = true
+                                }
+                                .padding(.top, 1)
+                            }
+                            .padding(10)
+                            .frame(maxWidth: .infinity)
+                        }
+                        .modifier(DragDropStyle(isTargeted: isDragTargeted))
+                        .onDrop(
+                            of: supportedAudioTypes,
+                            delegate: AudioDropDelegate(
+                                audioFileBinding: $audioFileURL,
+                                isTargeted: $isDragTargeted
+                            )
+                        )
                     }
                 }
             }
@@ -297,20 +259,24 @@ struct TranscriptionView: View {
             return
         }
         
-        isConverting = true // Set converting state to true
+        isConverting = true
         
         Task {
             do {
-                // Convert audio file
-                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
-                isConverting = false // Set converting state to false after conversion
+                let pcmArray = try await convertAudioFileToPCMArray(fileURL: audioURL)
                 
-                // Start transcription
-                coordinator.startTranscription(modelPath: modelPath, audioURL: convertedURL, language: selectedLanguage)
+                await MainActor.run {
+                    isConverting = false
+                    coordinator.startTranscription(
+                        modelPath: modelPath,
+                        audioData: pcmArray,
+                        language: selectedLanguage
+                    )
+                }
             } catch {
-                isConverting = false // Set converting state to false if conversion fails
-                DispatchQueue.main.async {
-                    self.coordinator.errorMessage = error.localizedDescription
+                await MainActor.run {
+                    isConverting = false
+                    coordinator.errorMessage = error.localizedDescription
                 }
             }
         }

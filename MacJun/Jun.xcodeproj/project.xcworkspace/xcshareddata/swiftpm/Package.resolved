@@ -1,6 +1,15 @@
 {
-  "originHash" : "66f512e6fff6d58dec2bd45d33ebea02546103fba43219f862e17b2ff444c61a",
+  "originHash" : "68c4779bcaf27e6272ad9a6ab6ccf168b19e9ef49c1d000b744b927c69c77ec1",
   "pins" : [
+    {
+      "identity" : "audiokit",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/AudioKit/AudioKit.git",
+      "state" : {
+        "branch" : "main",
+        "revision" : "73098f170bb64e1c9566d13924a30cff1f156eb5"
+      }
+    },
     {
       "identity" : "whisper.cpp",
       "kind" : "remoteSourceControl",

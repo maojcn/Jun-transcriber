@@ -21,25 +21,19 @@ class TranscriptionCoordinator: ObservableObject, WhisperDelegate {
     
     private var whisperWrapper: WhisperWrapper?
     
-    func startTranscription(modelPath: String, audioURL: URL, language: String?) {
+    func startTranscription(modelPath: String, audioData: [Float], language: String?) {
         isTranscribing = true
         segments = []
         errorMessage = nil
         
         Task {
             do {
-                // Convert audio file
-//                let convertedURL = try AudioConverter.convert(audioFile: audioURL)
-                
-                // Load audio samples
-                let samples = try WhisperWrapper.loadAudio(from: audioURL)
-                
                 // Initialize Whisper
                 whisperWrapper = try WhisperWrapper(modelPath: modelPath)
                 whisperWrapper?.delegate = self
                 
-                // Start transcription
-                whisperWrapper?.transcribe(samples, language: language)
+                // Start transcription with PCM array directly
+                whisperWrapper?.transcribe(audioData, language: language)
             } catch {
                 DispatchQueue.main.async {
                     self.errorMessage = error.localizedDescription

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		34123D4F2CD7070700F317F0 /* AudioKit in Frameworks */ = {isa = PBXBuildFile; productRef = 34123D4E2CD7070700F317F0 /* AudioKit */; };
 		34A5D1642CCE624E00906F82 /* whisper in Frameworks */ = {isa = PBXBuildFile; productRef = 34A5D1632CCE624E00906F82 /* whisper */; };
 /* End PBXBuildFile section */
 
@@ -40,6 +41,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				34123D4F2CD7070700F317F0 /* AudioKit in Frameworks */,
 				34A5D1642CCE624E00906F82 /* whisper in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -84,6 +86,7 @@
 			name = Jun;
 			packageProductDependencies = (
 				34A5D1632CCE624E00906F82 /* whisper */,
+				34123D4E2CD7070700F317F0 /* AudioKit */,
 			);
 			productName = MacJun;
 			productReference = 340DD2DF2CCACB8B0091ADA1 /* Jun.app */;
@@ -115,6 +118,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				34A5D1622CCE624E00906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */,
+				34123D4D2CD7070700F317F0 /* XCRemoteSwiftPackageReference "AudioKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 340DD2E02CCACB8B0091ADA1 /* Products */;
@@ -355,6 +359,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		34123D4D2CD7070700F317F0 /* XCRemoteSwiftPackageReference "AudioKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/AudioKit/AudioKit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 		34A5D1622CCE624E00906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ggerganov/whisper.cpp.git";
@@ -366,6 +378,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		34123D4E2CD7070700F317F0 /* AudioKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 34123D4D2CD7070700F317F0 /* XCRemoteSwiftPackageReference "AudioKit" */;
+			productName = AudioKit;
+		};
 		34A5D1632CCE624E00906F82 /* whisper */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 34A5D1622CCE624E00906F82 /* XCRemoteSwiftPackageReference "whisper.cpp" */;
