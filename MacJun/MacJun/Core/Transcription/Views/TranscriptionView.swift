@@ -284,7 +284,8 @@ struct TranscriptionView: View {
     
     private func downloadSegments() {
         let segmentsText = coordinator.segments.map { $0.text }.joined(separator: "\n")
-        let fileName = "Transcription_\(Date().timeIntervalSince1970).txt"
+        let fileName = audioFileURL?.lastPathComponent.replacingOccurrences(of: ".", with: "_") ?? "Transcription"
+        let fileName = "\(fileName)_transcription.txt"
         
         if let downloadDirectory = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first {
             let fileURL = downloadDirectory.appendingPathComponent(fileName)
